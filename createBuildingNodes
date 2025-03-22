@@ -1,0 +1,30 @@
+import os
+from dotenv import load_dotenv
+from neo4j import GraphDatabase
+from buildingNodes import building_node_ids 
+
+load_dotenv()
+
+URI = os.getenv("NEO4J_URI")
+USERNAME = os.getenv("NEO4J_USERNAME")
+PASSWORD = os.getenv("NEO4J_PASSWORD")
+
+def update_nodes_as_building(driver, node_ids):
+    query = """
+    MATCH (n)
+    WHERE n.id IN $node_ids
+    SET n.type = 'building_node'
+    RETURN count(n) AS updatedCount
+    """
+    with driver.session() as session:
+        result = session.run(query, node_ids=node_ids)
+        count = result.single()["updatedCount"]
+        print(f"Updated {count} nodes to type 'building_node'.")
+
+if __name__ == "__main__":
+    driver = GraphDatabase.driver(URI, auth=(USERNAME, PASSWORD))
+    
+    try:
+        update_nodes_as_building(driver, building_node_ids)
+    finally:
+        driver.close()
